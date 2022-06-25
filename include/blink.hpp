@@ -58,7 +58,7 @@ struct isr_arg {
   ISR_ID ID;
 };
 
-// Tells what button should toggle what button
+// Tells what button should toggle what LED
 struct Linker {
   ISR_ID     ID;
   uint32_t debounce_time;
@@ -80,6 +80,15 @@ struct Linker {
  */
 void toggleLED(LED_PIN pin);
 
+
+/**
+ * @brief Toggles only one LED at a time. To switch the LED being 
+ * toggled change nextLED. When switching LED this function also turns
+ * off the old LED.
+ * 
+ * @param nextLED The next LED to start blinking.
+ * @param blinkingLED The LED blinking, used to keep track of the LED blinking.
+ */
 void blinker(Linker** nextLED, Linker** blinkingLED);
 
 #endif

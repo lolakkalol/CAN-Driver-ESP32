@@ -17,11 +17,21 @@
 
 #include <Arduino.h>
 #include <queue>
-#include "blink.h"
+#include "blink.hpp"
+
+#define BLINKER_SPEED 500 // Time in ms
+
+// Handle to the hardware timer
+hw_timer_t* blinkTimer = NULL;
+
+// Flags when the blinkerTimer alarm has gone off
+SemaphoreHandle_t blinkSemaphore;
 
 // Keeps track of what LED to blink and what LED was being blinked
 Linker* blink = NULL;
 Linker* newBlink = NULL;
+
+uint32_t lastBlink = millis();
 
 // Defining linkers
 Linker Left_indicator(PIN_Left_Button, PIN_Left_LED);
@@ -30,6 +40,7 @@ Linker Right_indicator(PIN_Right_Button, PIN_Right_LED);
 
 // Function declarations
 void ARDUINO_ISR_ATTR isr(void* arg);
+void ARDUINO_ISR_ATTR timer_isr();
 
 /// Main setup of the program runs only once at the begining
 void setup() {
@@ -49,6 +60,15 @@ void setup() {
   attachInterruptArg(PIN_Hazard_Button, isr, &Hazard_indicator, FALLING);
   attachInterruptArg(PIN_Right_Button, isr, &Right_indicator, FALLING);
 
+  // Timer setup
+  blinkTimer = timerBegin(0, 80, true);
+  timerAttachInterrupt(blinkTimer, &timer_isr, true);
+  timerAlarmWrite(blinkTimer, BLINKER_SPEED * 1000, true);
+  timerAlarmEnable(blinkTimer);
+
+  // Create a binary semaphore, (Can only flag high or low)
+  blinkSemaphore = xSemaphoreCreateBinary();
+
  /* 
   * Starts serial communication, can be used to print text to pc 
   * terminal and should be removed before release
@@ -58,10 +78,16 @@ void setup() {
 
 // Main program loop, will run forever
 void loop() {
-  blinker(&newBlink, &blink);
 
-  delay(100);
+  // Tries to take the semaphone and returns one if there is one to take
+  if(xSemaphoreTake(blinkSemaphore, 0) == 1)
+    blinker(&newBlink, &blink);
+  delay(200);
 
+}
+void ARDUINO_ISR_ATTR timer_isr() {
+  // Gives a semaphore signaling that the timer has gone off
+  xSemaphoreGiveFromISR(blinkSemaphore, NULL);
 }
 
 /**
