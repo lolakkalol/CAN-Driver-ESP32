@@ -16,33 +16,20 @@
  */
 
 #include <Arduino.h>
+#include <queue>
 #include "blink.h"
 
-// Defining LEDs to be used in the program
-LED Left_LED = {PIN_Left_LED};
-LED Hazard_LED = {PIN_Hazard_LED};
-LED Right_LED = {PIN_Right_LED};
-LED Battery_LED = {PIN_Battery_LED};
+// Keeps track of what LED to blink and what LED was being blinked
+Linker* blink = NULL;
+Linker* newBlink = NULL;
 
-// Defining Buttons to be used in the program
-Button Left_Button = {PIN_Left_Button, false};
-Button Hazard_Button = {PIN_Hazard_Button, false};
-Button Right_Button = {PIN_Right_Button, false};
+// Defining linkers
+Linker Left_indicator(PIN_Left_Button, PIN_Left_LED);
+Linker Hazard_indicator(PIN_Hazard_Button, PIN_Hazard_LED);
+Linker Right_indicator(PIN_Right_Button, PIN_Right_LED);
 
-/*
- * Creating an array of tuples that pairs buttons and LEDs. This 
- * structures which button is controlling what LED
- */
-btnLED_Tuple arr_LED_btn[] = {
-  btnLED_Tuple {&Left_Button, &Left_LED},
-  btnLED_Tuple {&Hazard_Button, &Hazard_LED},
-  btnLED_Tuple {&Right_Button, &Right_LED}
-};
-
-// Description at the definition of the functions
+// Function declarations
 void ARDUINO_ISR_ATTR isr(void* arg);
-void toggleLED(LED_PIN pin);
-
 
 /// Main setup of the program runs only once at the begining
 void setup() {
@@ -58,9 +45,9 @@ void setup() {
   pinMode(PIN_Right_Button, INPUT_PULLDOWN);
 
   // Attach interrupts to button GPIOs, interrupt on falling edge
-  attachInterruptArg(PIN_Left_Button, isr, &Left_Button, FALLING);
-  attachInterruptArg(PIN_Hazard_Button, isr, &Hazard_Button, FALLING);
-  attachInterruptArg(PIN_Right_Button, isr, &Right_Button, FALLING);
+  attachInterruptArg(PIN_Left_Button, isr, &Left_indicator, FALLING);
+  attachInterruptArg(PIN_Hazard_Button, isr, &Hazard_indicator, FALLING);
+  attachInterruptArg(PIN_Right_Button, isr, &Right_indicator, FALLING);
 
  /* 
   * Starts serial communication, can be used to print text to pc 
@@ -71,10 +58,33 @@ void setup() {
 
 // Main program loop, will run forever
 void loop() {
-
-  // Calls the blink controller and passes the LED and button tupple
-  blinkController(arr_LED_btn, 3);
+  blinker(&newBlink, &blink);
 
   delay(100);
 
+}
+
+/**
+ * @brief The interrupt service rutine for the program, gets called 
+ * whenever an interrupt occurs. It handles button presses/interrupts 
+ * and a debouncing delay is implemented.
+ * 
+ * @param arg: A pointer to an argument.
+ */
+void ARDUINO_ISR_ATTR isr(void* arg) {
+  isr_arg* ptr = static_cast<isr_arg*> (arg);
+
+  // Checks if the argument is a struct of type BUTTON
+  if (ptr->ID == ISR_Linker) {
+    Linker* link = static_cast<Linker*> (arg);
+
+    // Prevents button bouncing by ignoring rappid button presses.
+    if (millis() - link->debounce_time > DEBOUNCE_TIME) {
+        link->debounce_time = millis();
+        newBlink = link;
+    }
+
+  }
+
+  return;
 }

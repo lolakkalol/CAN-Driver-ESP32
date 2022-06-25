@@ -29,24 +29,23 @@
 
 /// LED GPIO pins defined on the board
 enum LED_PIN {
-  PIN_Left_LED = 25,    /// The GPIO pin for left indicator LED
-  PIN_Hazard_LED = 26,  /// The GPIO pin for hazard indicator LED
-  PIN_Right_LED = 27,   /// The GPIO pin for right indicator LED
-  PIN_Battery_LED = 33  /// The GPIO pin for battery warning indicator LED
+    PIN_Left_LED = 25,    /// The GPIO pin for left indicator LED
+    PIN_Hazard_LED = 26,  /// The GPIO pin for hazard indicator LED
+    PIN_Right_LED = 27,   /// The GPIO pin for right indicator LED
+    PIN_Battery_LED = 33  /// The GPIO pin for battery warning indicator LED
 };
 
 
 /// Button GPIO pins defined on the board
 enum BUTTON_PIN {
-  PIN_Left_Button = 16,  /// The GPIO pin for left indicator button
-  PIN_Hazard_Button = 4, /// The GPIO pin for hazard indicator button
-  PIN_Right_Button = 0   /// The GPIO pin for right indicator button
+    PIN_Left_Button = 17,  /// The GPIO pin for left indicator button
+    PIN_Hazard_Button = 16, /// The GPIO pin for hazard indicator button
+    PIN_Right_Button = 4   /// The GPIO pin for right indicator button
 };
 
 /// ISR ID's used for struct identification in the ISR
 enum ISR_ID {
-  ISR_BUTTON,
-  ISR_LED,
+    ISR_Linker,
 };
 
 /**
@@ -59,36 +58,18 @@ struct isr_arg {
   ISR_ID ID;
 };
 
-/// A struct for LEDs
-struct LED {
-  ISR_ID ID;    /// Used to identify the struct in ISR
-  LED_PIN pin;  /// The GPIO pin on the physical board
+// Tells what button should toggle what button
+struct Linker {
+  ISR_ID     ID;
+  uint32_t debounce_time;
+  BUTTON_PIN btn_pin;
+  LED_PIN    LED_pin;
 
-  /// Initilizer list, always wants LED struct to have the same ISR_ID
-  LED(LED_PIN x) : ID(ISR_LED), pin(x) {}
-};
-
-/// A struct for buttons
-struct Button {
-  ISR_ID ID;              /// Used to identify the struct in the ISR
-  uint32_t debounce_time; /// Keeps track of last time it was pressed
-  BUTTON_PIN pin;         /// GPIO pin on the physical board
-  bool pressed;           /// Keeps track of toggle state not button state
-
-  Button(BUTTON_PIN x, bool y) : 
-    ID(ISR_BUTTON), 
-    debounce_time(millis()), 
-    pin(x), pressed(y) {}
-};
-
-/**
- * @brief Tuple of a button and an LED. The button is going to when 
- * passed into blinkController toggle if the LED is flashing or not.
- * 
- */
-struct btnLED_Tuple {
-  Button* p_btn;
-  LED* p_LED;
+  Linker(BUTTON_PIN x, LED_PIN y) : 
+    ID(ISR_Linker), 
+    debounce_time(millis()),
+    btn_pin(x), 
+    LED_pin(y) {}
 };
 
 /**
@@ -99,23 +80,6 @@ struct btnLED_Tuple {
  */
 void toggleLED(LED_PIN pin);
 
-/**
- * @brief Looks at the buttons provided to see if they have been 
- * toggled and if so starts blinking the LED in the same tuple as 
- * the button.
- * 
- * @param tuple: An array of tuples, each tuple contain the types Button and LED.
- * @param size : The length of the tuple array.
- */
-void blinkController(btnLED_Tuple tuple[], int size);
-
-/**
- * @brief The interrupt service rutine for the program, gets called 
- * whenever an interrupt occurs. It handles button presses/interrupts 
- * and a debouncing delay is implemented.
- * 
- * @param arg: A pointer to an argument.
- */
-void ARDUINO_ISR_ATTR isr(void* arg);
+void blinker(Linker** nextLED, Linker** blinkingLED);
 
 #endif
