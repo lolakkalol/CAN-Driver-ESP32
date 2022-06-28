@@ -18,8 +18,11 @@
 #include <Arduino.h>
 #include <queue>
 #include "blink.hpp"
+#include "can.h"
+#include "driver/twai.h" // Might need #include "driver/gpio.h" aswell
 
 #define BLINKER_SPEED 500 // Time in ms
+#define OWN_CAN_ID 0x37A3 // The MCU:s CAN ID
 
 // Handle to the hardware timer
 hw_timer_t* blinkTimer = NULL;
@@ -45,6 +48,15 @@ void ARDUINO_ISR_ATTR timer_isr();
 /// Main setup of the program runs only once at the begining
 void setup() {
 
+   /* 
+  * Starts serial communication, can be used to print text to pc 
+  * terminal and should be removed before release
+  */
+  Serial.begin(115200);
+
+  // Starts can in Normal mode on pin 22 (tx) and 23 (rx), 500kbps 
+  CAN_start();
+
   // LEDs GPIO pin config
   pinMode(PIN_Left_LED, OUTPUT);
   pinMode(PIN_Hazard_LED, OUTPUT);
@@ -68,12 +80,6 @@ void setup() {
 
   // Create a binary semaphore, (Can only flag high or low)
   blinkSemaphore = xSemaphoreCreateBinary();
-
- /* 
-  * Starts serial communication, can be used to print text to pc 
-  * terminal and should be removed before release
-  */
-  Serial.begin(115200);
 }
 
 // Main program loop, will run forever
@@ -82,9 +88,19 @@ void loop() {
   // Tries to take the semaphone and returns one if there is one to take
   if(xSemaphoreTake(blinkSemaphore, 0) == 1)
     blinker(&newBlink, &blink);
-  delay(200);
 
 }
+
+/* --------------------- TASKS ----------------------- */
+static void can_receive_task(void* arg) {
+  uint32_t* alerts;
+  twai_read_alerts(alerts, portMAX_DELAY);
+
+  // TODO: READ messages received and start task
+}
+
+/* -------------------- FUNCTIONS -------------------- */
+
 void ARDUINO_ISR_ATTR timer_isr() {
   // Gives a semaphore signaling that the timer has gone off
   xSemaphoreGiveFromISR(blinkSemaphore, NULL);
