@@ -9,6 +9,6 @@
  * 
  * @return esp_err_t Error message from driver 
  */
-esp_err_t CAN_start();
+esp_err_t config_and_start_twai();
 
 #endif

@@ -60,8 +60,9 @@ void setup() {
   */
   Serial.begin(115200);
 
-  // Starts can in Normal mode on pin 22 (tx) and 23 (rx), 500kbps 
-  CAN_start();
+  // Starts twai (CAN) in Normal mode on pin 22 (tx) and 23 (rx), 500kbps 
+  // twai is CAN its just that ESP decided to not call it that...
+  config_and_start_twai();
 
   // LEDs GPIO pin config
   pinMode(PIN_Left_LED, OUTPUT);
