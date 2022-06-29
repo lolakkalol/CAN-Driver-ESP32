@@ -30,6 +30,9 @@ hw_timer_t* blinkTimer = NULL;
 // Flags when the blinkerTimer alarm has gone off
 SemaphoreHandle_t blinkSemaphore;
 
+// Used to signal the arrival of new data
+SemaphoreHandle_t rxSemaphore;
+
 // Keeps track of what LED to blink and what LED was being blinked
 Linker* blink = NULL;
 Linker* newBlink = NULL;
@@ -44,6 +47,9 @@ Linker Right_indicator(PIN_Right_Button, PIN_Right_LED);
 // Function declarations
 void ARDUINO_ISR_ATTR isr(void* arg);
 void ARDUINO_ISR_ATTR timer_isr();
+
+// Message reception
+twai_message_t rx_message;
 
 /// Main setup of the program runs only once at the begining
 void setup() {
@@ -85,18 +91,35 @@ void setup() {
 // Main program loop, will run forever
 void loop() {
 
+  // Receives messages and handles them
+  if (twai_receive(&rx_message, 0) == ESP_OK) {
+
+    // An example of how the CAN messages can be handled in a super loop
+    switch (rx_message.identifier)
+    {
+    // Examle case where messages with id 0x012's data is printed
+    case 0x012:
+      Serial.printf("Message with id %#05x\n", rx_message.identifier);
+      Serial.printf("Data received: ");
+
+      for (int i = 0; i < rx_message.data_length_code; i++) {
+        Serial.printf("%#04x ");
+      }
+
+      Serial.printf("\n\r");
+      
+      break;
+    
+    default:
+      break;
+    }
+  }
+
+
   // Tries to take the semaphone and returns one if there is one to take
   if(xSemaphoreTake(blinkSemaphore, 0) == 1)
     blinker(&newBlink, &blink);
 
-}
-
-/* --------------------- TASKS ----------------------- */
-static void can_receive_task(void* arg) {
-  uint32_t* alerts;
-  twai_read_alerts(alerts, portMAX_DELAY);
-
-  // TODO: READ messages received and start task
 }
 
 /* -------------------- FUNCTIONS -------------------- */
