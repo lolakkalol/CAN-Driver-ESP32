@@ -1,6 +1,41 @@
+<<<<<<< HEAD
 .pio
 .vscode
 Doxyfile
 html
 latex
 src/Steering-Wheel-App.code-workspace
+=======
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+>>>>>>> 39add4dabf3ff19fd72d769f4ea4f3bb5c1ffb9f
