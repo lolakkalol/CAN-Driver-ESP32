@@ -89,7 +89,7 @@ void setup() {
   blinkSemaphore = xSemaphoreCreateBinary();
 }
 
-// Main program loop, will run forever
+// Main program loop, will run forever and should have no delays
 void loop() {
 
   // Receives messages and handles them
