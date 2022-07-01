@@ -38,9 +38,9 @@ enum LED_PIN {
 
 /// Button GPIO pins defined on the board
 enum BUTTON_PIN {
-    PIN_Left_Button = 34,//17,  /// The GPIO pin for left indicator button
-    PIN_Hazard_Button = 35,//16, /// The GPIO pin for hazard indicator button
-    PIN_Right_Button = 32,//4   /// The GPIO pin for right indicator button
+    PIN_Left_Button = 17,  /// The GPIO pin for left indicator button
+    PIN_Hazard_Button = 16, /// The GPIO pin for hazard indicator button
+    PIN_Right_Button = 4   /// The GPIO pin for right indicator button
 };
 
 /// ISR ID's used for struct identification in the ISR
@@ -90,5 +90,20 @@ void toggleLED(LED_PIN pin);
  * @param blinkingLED The LED blinking, used to keep track of the LED blinking.
  */
 void blinker(Linker** nextLED, Linker** blinkingLED);
+
+/* ----------------------------------------------------------- */
+
+#define BLINKER_SPEED 500 // Time in ms
+
+void init_blink();
+void checkIfBlink();
+
+extern SemaphoreHandle_t blinkSemaphore;
+
+// Keeps track of what LED to blink and what LED was being blinked
+extern Linker* blink;
+extern Linker* newBlink;
+
+/* ----------------------------------------------------------- */
 
 #endif
